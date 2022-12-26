@@ -2,7 +2,6 @@ import base64
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
-from django.shortcuts import get_object_or_404
 from djoser.serializers import UserSerializer as DjoserUserSerializer
 from rest_framework import serializers
 
@@ -109,6 +108,26 @@ class RecipeSerializer(serializers.ModelSerializer):
                   'is_in_shopping_cart', 'name', 'image', 'text',
                   'cooking_time')
 
+    def validate(self, data):
+        for field in ('tags', 'ingredients', 'name', 'text', 'cooking_time'):
+            if not self.initial_data.get(field):
+                raise serializers.ValidationError(
+                    f'Не заполнено поле `{field}`')
+        ingredients = self.initial_data['ingredients']
+        ingredients_ids = list()
+        for ingredient in ingredients:
+            if not ingredient.get('amount') or not ingredient.get('id'):
+                raise serializers.ValidationError(
+                    'Убедитесь, что поле `ингредиенты` заполнено верно.')
+            if not int(ingredient['amount']) > 0:
+                raise serializers.ValidationError(
+                    'Количество ингредиента должно быть больше нуля.')
+            if ingredient['id'] in ingredients_ids:
+                raise serializers.ValidationError(
+                    'Ингредиенты не должны повторяться.')
+            ingredients_ids.append(ingredient['id'])
+        return data
+
     def get_is_favorited(self, obj):
         """Возвращает True, если рецепт в Избранном пользователя."""
         current_user = self.context['request'].user
@@ -125,30 +144,29 @@ class RecipeSerializer(serializers.ModelSerializer):
         return ShoppingCart.objects.filter(
             recipe=obj, user=current_user).exists()
 
+    def _create_recipe_ingredient_objects(self, recipe, ingredients):
+        """Вспомогательный метод.
+        Принимает на вход объект рецепта и список ингредиентов.
+        Создает объекты модели RecipeIngredient."""
+        obj = (RecipeIngredient(
+            recipe=recipe, ingredient_id=ing['id'], amount=ing['amount']
+            ) for ing in ingredients)
+        RecipeIngredient.objects.bulk_create(obj)
+
     def create(self, validated_data):
-        tags = self.initial_data.pop('tags')
+        tags = self.initial_data.get('tags')
         ingredients = self.initial_data.pop('ingredients')
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
-        for ingredient in ingredients:
-            current_ingredient = get_object_or_404(
-                Ingredient, pk=ingredient.get('id'))
-            RecipeIngredient.objects.create(
-                recipe=recipe, ingredient=current_ingredient,
-                amount=ingredient.get('amount'))
+        self._create_recipe_ingredient_objects(recipe, ingredients)
         return recipe
 
     def update(self, instance, validated_data):
-        tags = self.initial_data.get('tags')
-        instance.tags.set(tags)
         ingredients = self.initial_data.pop('ingredients')
         RecipeIngredient.objects.filter(recipe=instance).all().delete()
-        for ingredient in ingredients:
-            current_ingredient = get_object_or_404(
-                Ingredient, pk=ingredient.get('id'))
-            RecipeIngredient.objects.create(
-                recipe=instance, ingredient=current_ingredient,
-                amount=ingredient.get('amount'))
+        self._create_recipe_ingredient_objects(instance, ingredients)
+        tags = self.initial_data.get('tags')
+        instance.tags.set(tags)
         instance.image = validated_data.get('image', instance.image)
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)

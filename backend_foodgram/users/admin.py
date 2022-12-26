@@ -10,6 +10,7 @@ User = get_user_model()
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     list_filter = ('email', 'username', 'is_staff', 'is_active')
+    search_fields = ('username', 'email')
 
 
 @admin.register(Subscription)

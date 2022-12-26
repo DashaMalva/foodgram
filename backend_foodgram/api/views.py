@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -16,9 +14,9 @@ from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
 from users.models import Subscription
 from .filters import RecipeFilter
 from .permissions import OwnerOrReadOnly, ReadOnly
-from .serializers import (IngredientSerializer, RecipeListSerializer,
-                          RecipeSerializer, SubscriptionSerializer,
-                          TagSerializer)
+from .serializers import (IngredientSerializer, RecipeSerializer,
+                          SubscriptionSerializer, TagSerializer)
+from .utils import add_obj, create_shopping_list, del_obj
 
 User = get_user_model()
 
@@ -32,6 +30,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (ReadOnly,)
+    pagination_class = None
     filter_backends = (filters.SearchFilter,)
     search_fields = ('^name',)
 
@@ -44,6 +43,7 @@ class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (ReadOnly,)
+    pagination_class = None
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -76,61 +76,22 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    def _add_obj(self, request, pk, model):
-        """Вспомогательный метод.
-        Создает связь между рецептом и пользователем через модель.
-
-        Параметры:
-        request -- запрос
-        pk -- id рецепта
-        model -- промежуточная модель для создания связи с рецептом
-        Возвращает кортеж из двух элементов:
-        - подготовленные данные для ответа
-        - статус ответа
-        """
-        recipe = get_object_or_404(Recipe, pk=pk)
-        _, created = model.objects.get_or_create(
-            recipe=recipe, user=request.user)
-        if not created:
-            return ({"errors": f"У вас уже добавлен рецепт с id {pk}."},
-                    status.HTTP_400_BAD_REQUEST)
-        serializer = RecipeListSerializer(recipe, context={'request': request})
-        return (serializer.data, status.HTTP_201_CREATED)
-
-    def _del_obj(self, request, pk, model):
-        """Вспомогательный метод.
-        Уничтожает связь между рецептом и пользователем через модель.
-
-        Параметры:
-        request -- запрос
-        pk -- id рецепта
-        model -- промежуточная модель для создания связи с рецептом
-        Возвращает кортеж из двух элементов:
-        - подготовленные данные для ответа
-        - статус ответа
-        """
-        recipe = get_object_or_404(Recipe, pk=pk)
-        fav_recipe = get_object_or_404(model, recipe=recipe, user=request.user)
-        fav_recipe.delete()
-        return ({"success": f"Рецепта с id {pk} удален."},
-                status.HTTP_204_NO_CONTENT)
-
     @action(methods=['post', 'delete'], detail=True)
     def favorite(self, request, pk):
         """Добавляет/удаляет рецепт из Избранного текущего пользователя."""
         if request.method == "POST":
-            data, status = self._add_obj(request, pk, Favorite)
+            data, status = add_obj(request, pk, Favorite)
             return Response(data, status=status)
-        data, status = self._del_obj(request, pk, Favorite)
+        data, status = del_obj(request, pk, Favorite)
         return Response(data, status=status)
 
     @action(methods=['post', 'delete'], detail=True)
     def shopping_cart(self, request, pk):
         """Добавляет/удаляет рецепт из Списка покупок текущего пользователя."""
         if request.method == "POST":
-            data, status = self._add_obj(request, pk, ShoppingCart)
+            data, status = add_obj(request, pk, ShoppingCart)
             return Response(data, status=status)
-        data, status = self._del_obj(request, pk, ShoppingCart)
+        data, status = del_obj(request, pk, ShoppingCart)
         return Response(data, status=status)
 
     @action(methods=['get'], detail=False,
@@ -142,14 +103,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 'ingredient__name',
                 'ingredient__measurement_unit',
                 'amount').order_by('ingredient__name')
-        data = defaultdict(int)
-        for ingr in ingredients:
-            key = (f'{ingr["ingredient__name"]} '
-                   f'({ingr["ingredient__measurement_unit"]})')
-            data[key] += ingr['amount']
-        shopping_list = ['СПИСОК ПОКУПОК:\n']
-        for key, value in data.items():
-            shopping_list.append(f'- {key}: {value} \n')
+        shopping_list = create_shopping_list(ingredients)
         response = HttpResponse(shopping_list, content_type='text/plain')
         response['Content-Disposition'] = (
             'attachment; filename={0}'.format('shopping_list.txt')

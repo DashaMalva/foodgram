@@ -6,13 +6,15 @@ from .models import (Favorite, Ingredient, Recipe, RecipeIngredient,
 
 class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
+    min_num = 1
     extra = 1
 
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('name', 'author', 'added_to_favorites')
-    list_filter = ('name', 'author', 'tags')
+    list_filter = ('tags', 'name', 'author')
+    search_fields = ('name', 'author__username', 'tags__slug', 'tags__name')
     filter_horizontal = ('tags',)
     inlines = (RecipeIngredientInline,)
 
@@ -38,6 +40,12 @@ class IngredientAdmin(admin.ModelAdmin):
     list_editable = ('measurement_unit',)
     list_filter = ('name',)
     search_fields = ('name',)
+
+
+@admin.register(RecipeIngredient)
+class RecipeIngredientAdmin(admin.ModelAdmin):
+    list_display = ('recipe', 'ingredient', 'amount')
+    list_editable = ('amount',)
 
 
 @admin.register(Favorite)
