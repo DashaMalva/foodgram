@@ -34,13 +34,49 @@
 Для реализации проекта Яндекс.Практикумом были предоставлены техническое задание и готовый фронтенд (одностраничное приложение на фреймворке React). На основе этого был полностью написан бэкенд приложения (созданы модели, админ-панель и реализован API).
 
 ## Технологии
-* Python 3.10<br>
-* Django 4.1.4<br>
-* Django Rest Framework 3.12.4<br>
+* Python 3.10
+* Django 4.1.4
+* Django Rest Framework 3.12.4
+* Gunicorn 20.1.0
+* Psycopg2 binary 2.9.5
+
+### Проект упакован в связанные контейнеры Docker:
+
+* контейнер для бекэнда проекта;
+* контейнер для фронтэнда проекта;
+* контейнер для базы данных Postgres (образ postgres:13.0-alpine);
+* контейнер для веб-сервера Nginx (образ nginx:1.21.3-alpine).
+
+
+### Команды для запуска приложения в контейнерах
+- Развернуть проект:
+```
+docker-compose up -d
+```
+- Выполнить миграции, создать суперпользователя и собрать статику:
+```
+docker-compose exec backend python manage.py migrate
+docker-compose exec backend python manage.py createsuperuser
+docker-compose exec backend python manage.py collectstatic --no-input
+```
+- Наполнить проект данными об ингредиентах для рецептов:
+```
+docker-compose exec backend python manage.py load_csv
+```
+
+### Шаблон env-файла
+В env-файле директории infra должны храниться переменные окружения для работы с базой данных.
+Пример наполнения env-файла:
+> DB_ENGINE=django.db.backends.postgresql<br>
+> DB_NAME=postgres<br>
+> POSTGRES_USER=postgres<br>
+> POSTGRES_PASSWORD=12345<br>
+> DB_HOST=db
+> DB_PORT=5432
 
 
 ## Документация API Foodgram
-```http://localhost/api/docs/redoc.html```
+```http://daryamatv.ddns.net/api/docs/redoc.html```
 
 
 ## Лицензия
