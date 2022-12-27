@@ -2,9 +2,7 @@ version: '3.3'
 services:
 
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: daryamatv/foodgram_frontend:latest
     volumes:
       - ../frontend/:/app/result_build/
 
@@ -16,7 +14,7 @@ services:
       - ./.env
 
   backend:
-    build: ../backend_foodgram/
+    image: daryamatv/foodgram_backend:latest
     restart: always
     volumes:
       - static_value:/app/staticfiles/
