@@ -114,7 +114,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     f'Не заполнено поле `{field}`')
         ingredients = self.initial_data['ingredients']
-        ingredients_ids = list()
+        ingredients_ids = set()
         for ingredient in ingredients:
             if not ingredient.get('amount') or not ingredient.get('id'):
                 raise serializers.ValidationError(
@@ -125,7 +125,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             if ingredient['id'] in ingredients_ids:
                 raise serializers.ValidationError(
                     'Ингредиенты не должны повторяться.')
-            ingredients_ids.append(ingredient['id'])
+            ingredients_ids.add(ingredient['id'])
         return data
 
     def get_is_favorited(self, obj):
