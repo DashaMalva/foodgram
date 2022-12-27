@@ -57,7 +57,7 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         script: |
           sudo docker-compose stop
-          sudo docker-compose rm backend -f
+          sudo docker-compose rm backend
           sudo docker pull daryamatv/foodgram_backend:latest
           sudo docker pull daryamatv/foodgram_frontend:latest
           touch .env
