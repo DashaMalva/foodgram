@@ -30,6 +30,8 @@
 - Регистрация и авторизация пользователей. Разные уровни доступа для гостей и авторизованных пользователей.
 
 ```Адрес проекта``` [http://daryamatv.ddns.net/](http://daryamatv.ddns.net/)
+Логин администратора: admin@admin.com
+Пароль администратора: admin12345
 
 ### Документация API Foodgram
 [Здесь](http://daryamatv.ddns.net/api/docs/redoc.html) можно посмотреть какие запросы разрешены к API Foodgram.
