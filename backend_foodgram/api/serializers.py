@@ -150,7 +150,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         Создает объекты модели RecipeIngredient."""
         obj = (RecipeIngredient(
             recipe=recipe, ingredient_id=ing['id'], amount=ing['amount']
-            ) for ing in ingredients)
+        ) for ing in ingredients)
         RecipeIngredient.objects.bulk_create(obj)
 
     def create(self, validated_data):
