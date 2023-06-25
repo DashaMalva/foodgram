@@ -29,9 +29,9 @@
 - Просмотр страницы автора со списков опубликованных им рецептов.
 - Регистрация и авторизация пользователей. Разные уровни доступа для гостей и авторизованных пользователей.
 
-```Адрес проекта``` [http://daryamatv.ddns.net/](http://daryamatv.ddns.net/)
-Логин администратора: admin@admin.com
-Пароль администратора: admin12345
+Адрес проекта: [http://daryamatv.ddns.net/](http://daryamatv.ddns.net/)<br>
+Логин администратора: admin@admin.com<br>
+Пароль администратора: admin12345<br>
 
 ### Документация API Foodgram
 [Здесь](http://daryamatv.ddns.net/api/docs/redoc.html) можно посмотреть какие запросы разрешены к API Foodgram.
@@ -60,7 +60,7 @@
 > DB_ENGINE=django.db.backends.postgresql<br>
 > DB_NAME=postgres<br>
 > POSTGRES_USER=postgres<br>
-> POSTGRES_PASSWORD=12345<br>ы
+> POSTGRES_PASSWORD=12345<br>
 > DB_HOST=db
 > DB_PORT=5432
 
